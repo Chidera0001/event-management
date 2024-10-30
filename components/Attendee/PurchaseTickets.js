@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useRouter } from 'next/router';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
+import CheckoutForm from './CheckoutForm';
+
+const stripePromise = loadStripe('your-publishable-key-from-stripe');
 
 const PurchaseTickets = () => {
   const [events, setEvents] = useState([]);
@@ -8,6 +13,7 @@ const PurchaseTickets = () => {
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [checkout, setCheckout] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,15 +38,7 @@ const PurchaseTickets = () => {
 
   const handlePurchase = async (e) => {
     e.preventDefault();
-
-    try {
-      await axios.post(`/api/tickets/purchase`, { eventId: selectedEvent, ticketId: selectedTicket, quantity });
-      alert('Successfully purchased tickets');
-      router.push('/attendee/view-tickets');
-    } catch (err) {
-      console.error(err);
-      alert('Error purchasing tickets');
-    }
+    setCheckout(true);
   };
 
   return (
@@ -92,11 +90,16 @@ const PurchaseTickets = () => {
               type="submit"
               className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-700"
             >
-              Purchase Tickets
+              Proceed to Checkout
             </button>
           </>
         )}
       </form>
+      {checkout && (
+        <Elements stripe={stripePromise}>
+          <CheckoutForm eventId={selectedEvent} ticketId={selectedTicket} quantity={quantity} />
+        </Elements>
+      )}
     </div>
   );
 };
